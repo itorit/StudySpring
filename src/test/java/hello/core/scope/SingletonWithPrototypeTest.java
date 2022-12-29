@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Scope;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.inject.Provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,24 +37,31 @@ public class SingletonWithPrototypeTest {
 
         ClientBean clientBean2 = ac.getBean(ClientBean.class);
         int count2 = clientBean2.logic();
-        assertThat(count2).isEqualTo(2);
+        assertThat(count2).isEqualTo(1);
 
     }
 
     //디폴트가 singleton이라 생략해도됨
     @Scope("singleton")
     static class ClientBean{
-        private final PrototypeBean prototypeBean; //생성시점에 주입
+//        private final PrototypeBean prototypeBean; //생성시점에 주입
+
+        // ObjectFactory로 사용해도됨. 여기에 편의 기능을 추가해서 ObjectProvider가 만들어졌다.
+        // private final ObjectFactory<PrototypeBean> prototypeBeanProvider;
+        // 스프링에서 제공하는 Provider
+        // private final ObjectProvider<PrototypeBean> prototypeBeanProvider;
+        private final Provider<PrototypeBean> prototypeBeanProvider;
 
         @Autowired
-        public ClientBean(PrototypeBean prototypeBean) {
+        public ClientBean(Provider<PrototypeBean> prototypeBeanProvider) {
+            this.prototypeBeanProvider = prototypeBeanProvider;
             System.out.println("ClientBean.ClientBean");
-            this.prototypeBean = prototypeBean;
         }
 
         public int logic() {
+            // PrototypeBean prototypeBean = prototypeBeanProvider.getObject();
+            PrototypeBean prototypeBean = prototypeBeanProvider.get();
             prototypeBean.addCount();
-
             //합치는 단축키 Ctrl + Alt + N
             int count = prototypeBean.getCount();
             return count;
